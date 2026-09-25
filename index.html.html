@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Our Memory Quiz & Story ✨</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:ital,wght@0,400;0,600;0,700;0,800;1,400&family=Playfair+Display:ital,wght@0,600;0,700;1,400&display=swap" rel="stylesheet">
+    
+    <!-- Canvas Confetti Library -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <style>
+        :root {
+            --bg-dark-1: #12091f;
+            --bg-dark-2: #241038;
+            --card-light: rgba(255, 255, 255, 0.97);
+            --primary-purple: #8a2be2;
+            --primary-hover: #731ac4;
+            --accent-pink: #ff007f;
+            --text-dark: #1e1e24;
+            --danger-bg: #1f0714;
+            --danger-accent: #ff3366;
+            --success-green: #28a745;
+            --wrong-red: #dc3545;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body, html {
+            width: 100%;
+            height: 100%;
+            overflow-x: hidden;
+            font-family: 'Nunito', sans-serif;
+            background: linear-gradient(135deg, var(--bg-dark-1), var(--bg-dark-2));
+            color: #ffffff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: background 1s ease-in-out;
+        }
+
+        /* Particle Background Canvas */
+        #particle-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        /* Main Container */
+        .app-container {
+            position: relative;
+            z-index: 10;
+            width: 90%;
+            max-width: 520px;
+            padding: 20px 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* Base Card Styling */
+        .card {
+            background: var(--card-light);
+            border-radius: 24px;
+            padding: 35px 28px;
+            width: 100%;
+            color: var(--text-dark);
+            box-shadow: 0 20px 45px rgba(0, 0, 0, 0.6), 0 0 25px rgba(138, 43, 226, 0.35);
+            text-align: center;
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.4s ease, box-shadow 0.4s ease;
+            position: relative;
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.6);
+        }
+
+        /* Shake animation for wrong selection */
+        .card.shake {
+            animation: shake 0.45s cubic-bezier(.36, .07, .19, .97) both;
+        }
+
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-3px, 0, 0); }
+            20%, 80% { transform: translate3d(5px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-7px, 0, 0); }
+            40%, 60% { transform: translate3d(7px, 0, 0); }
+        }
+
+        /* Progress Bar */
+        .progress-container {
+            width: 100%;
+            height: 8px;
+            background: #e6e0f3;
+            border-radius: 10px;
+            margin-bottom: 22px;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, var(--accent-pink), var(--primary-purple));
+            transition: width 0.4s ease;
+            border-radius: 10px;
+        }
+
+        .q-counter {
+            font-size: 0.85rem;
+            font-weight: 800;
+            color: var(--primary-purple);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 8px;
+        }
+
+        .question-text {
+            font-family: 'Fredoka', sans-serif;
+            font-size: 1.4rem;
+            color: #1a1a1a;
+            margin-bottom: 25px;
+            line-height: 1.38;
+        }
+
+        /* Options Stack */
+        .options-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .option-btn {
+            background: #f5f0fb;
+            border: 2px solid #e2d7f5;
+            padding: 14px 18px;
+            border-radius: 16px;
+            font-family: 'Nunito', sans-serif;
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: #2c2c34;
+            cursor: pointer;
+            transition: all 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
+            text-align: left;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            outline: none;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+        }
+
+        .option-btn:hover {
+            background: #ede2ff;
+            border-color: var(--primary-purple);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 12px rgba(138, 43, 226, 0.15);
+        }
+
+        .option-btn:active {
+            transform: translateY(0);
+        }
+
+        .option-btn.correct {
+            background: #d4edda !important;
+            border-color: var(--success-green) !important;
+            color: #155724 !important;
+            box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3) !important;
+        }
+
+        .option-btn.wrong {
+            background: #f8d7da !important;
+            border-color: var(--wrong-red) !important;
+            color: #721c24 !important;
+            box-shadow: 0 4px 15px rgba(220, 53, 69, 0.3) !important;
+        }
+
+        /* Warning Cards (Critical Section) */
+        .warning-card {
+            background: var(--danger-bg);
+            border: 2px solid var(--danger-accent);
+            color: #ffffff;
+            box-shadow: 0 0 40px rgba(255, 51, 102, 0.45);
+        }
+
+        .warning-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.85rem;
+            color: var(--danger-accent);
+            margin-bottom: 15px;
+        }
+
+        .warning-desc {
+            font-size: 1.1rem;
+            line-height: 1.65;
+            color: #e5d1dc;
+            margin-bottom: 28px;
+        }
+
+        .action-btn {
+            background: linear-gradient(135deg, var(--danger-accent), var(--accent-pink));
+            color: #ffffff;
+            border: none;
+            padding: 15px 34px;
+            font-size: 1.1rem;
+            font-weight: 800;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 8px 22px rgba(255, 51, 102, 0.45);
+            transition: all 0.3s ease;
+            display: inline-block;
+            outline: none;
+        }
+
+        .action-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 12px 28px rgba(255, 51, 102, 0.65);
+        }
+
+        /* Closing Card */
+        .closing-card {
+            background: #ffffff;
+            border: 2px solid #ffcc00;
+            box-shadow: 0 0 45px rgba(255, 204, 0, 0.35);
+        }
+
+        .closing-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 2rem;
+            color: var(--primary-purple);
+            margin-bottom: 15px;
+        }
+
+        .closing-body {
+            font-size: 1.12rem;
+            line-height: 1.7;
+            color: #383842;
+            margin-bottom: 28px;
+        }
+
+        .replay-btn {
+            background: linear-gradient(135deg, var(--primary-purple), var(--accent-pink));
+            box-shadow: 0 8px 22px rgba(138, 43, 226, 0.4);
+        }
+
+        .replay-btn:hover {
+            box-shadow: 0 12px 28px rgba(138, 43, 226, 0.6);
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        @media (max-width: 480px) {
+            .question-text { font-size: 1.25rem; }
+            .option-btn { font-size: 0.95rem; padding: 12px 15px; }
+            .card { padding: 26px 20px; }
+            .warning-title { font-size: 1.6rem; }
+            .closing-title { font-size: 1.7rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="particle-canvas"></canvas>
+
+    <div class="app-container">
+        
+        <!-- QUIZ CARD -->
+        <div class="card" id="quiz-card">
+            <div class="progress-container">
+                <div class="progress-bar" id="progress-bar"></div>
+            </div>
+            <div class="q-counter" id="q-counter">Question 1 of 9</div>
+            <h2 class="question-text" id="question-text">Loading question...</h2>
+            <div class="options-list" id="options-list">
+                <!-- Dynamic options generated via JavaScript -->
+            </div>
+        </div>
+
+        <!-- WARNING CARD 1 -->
+        <div class="card warning-card hidden" id="warning-card-1">
+            <div style="font-size: 3.2rem; margin-bottom: 10px;">⚠️</div>
+            <h2 class="warning-title">A Brief Pause...</h2>
+            <p class="warning-desc">
+                Here we reach a critical and delicate part of our story. It might bring up sensitive feelings, so if you are not ready, you are requested to leave immediately.
+            </p>
+            <button class="action-btn" onclick="proceedToWarning2()">Click to Continue</button>
+        </div>
+
+        <!-- WARNING CARD 2 -->
+        <div class="card warning-card hidden" id="warning-card-2">
+            <div style="font-size: 3.2rem; margin-bottom: 10px;">🛑</div>
+            <h2 class="warning-title">Last Warning</h2>
+            <p class="warning-desc">
+                Please proceed only if you feel comfortable answering these remaining questions. It is entirely your choice.
+            </p>
+            <button class="action-btn" onclick="startCriticalSection()">Proceed Anyway</button>
+        </div>
+
+        <!-- CLOSING CARD -->
+        <div class="card closing-card hidden" id="closing-card">
+            <div style="font-size: 3.5rem; margin-bottom: 12px;">💖</div>
+            <h2 class="closing-title">A Message for You</h2>
+            <p class="closing-body">
+                I know this might bring back mixed feelings, but thank you for taking the time to answer these questions with me.
+                <br><br>
+                I sincerely hope our friendship continues smoothly without any obstacles ahead. I'm truly sorry if any of this brought you hurt. ✨
+            </p>
+            <button class="action-btn replay-btn" onclick="restartQuiz()">Replay Quiz 🔄</button>
+        </div>
+
+    </div>
+
+    <script>
+        // Questions Dataset with precise answers and options
+        const quizData = [
+            {
+                question: "1) What was the first thing we talked about with each other?",
+                options: [
+                    { text: 'S: "Who is a fan of Blackpink?" / V: "Me"', isCorrect: true },
+                    { text: 'S: "Which class are you in?" / V: "8th class"', isCorrect: false },
+                    { text: 'S: "Who else likes BTS?" / V: "Yes"', isCorrect: false },
+                    { text: 'S: "Do you listen to K-pop?" / V: "Sometimes"', isCorrect: false }
+                ]
+            },
+            {
+                question: "2) When did we first meet each other?",
+                options: [
+                    { text: "August 2023", isCorrect: true },
+                    { text: "July 2023", isCorrect: false },
+                    { text: "September 2023", isCorrect: false },
+                    { text: "August 2022", isCorrect: false }
+                ]
+            },
+            {
+                question: "3) What do you remember me giving to you?",
+                options: [
+                    { text: "Ramen, chocolates, and written sheets (periodic table & homework)", isCorrect: true },
+                    { text: "A notebook, pens, and a keychain", isCorrect: false },
+                    { text: "Flowers, chocolates, and a letter", isCorrect: false },
+                    { text: "Snacks, books, and handwritten cards", isCorrect: false }
+                ]
+            },
+            {
+                question: "4) How many days has it been since we became friends?",
+                options: [
+                    { text: "1187 days", isCorrect: true },
+                    { text: "1050 days", isCorrect: false },
+                    { text: "1240 days", isCorrect: false },
+                    { text: "1120 days", isCorrect: false }
+                ]
+            },
+            {
+                question: "5) Which style of yours did I like seeing you in the most?",
+                options: [
+                    { text: "Western wear", isCorrect: true },
+                    { text: "Traditional wear", isCorrect: false },
+                    { text: "Casual hoodies", isCorrect: false },
+                    { text: "Formal wear", isCorrect: false }
+                ]
+            },
+            {
+                question: "6) How many times did I post you on my story?",
+                options: [
+                    { text: "4 times", isCorrect: true },
+                    { text: "2 times", isCorrect: false },
+                    { text: "6 times", isCorrect: false },
+                    { text: "5 times", isCorrect: false }
+                ]
+            },
+            // Critical Section
+            {
+                question: "7) When did we propose to each other (respectively)?",
+                options: [
+                    { text: "Feb 25, 2025 & April 06", isCorrect: true },
+                    { text: "Feb 14, 2025 & April 10", isCorrect: false },
+                    { text: "March 01, 2025 & April 06", isCorrect: false },
+                    { text: "Feb 25, 2025 & May 01", isCorrect: false }
+                ]
+            },
+            {
+                question: "8) When did we break up?",
+                options: [
+                    { text: "13 April 2026", isCorrect: true },
+                    { text: "01 April 2026", isCorrect: false },
+                    { text: "20 March 2026", isCorrect: false },
+                    { text: "13 May 2026", isCorrect: false }
+                ]
+            },
+            {
+                question: "9) What special nickname did I say I wanted to call you?",
+                options: [
+                    { text: "Babe", isCorrect: true },
+                    { text: "Honey", isCorrect: false },
+                    { text: "Sweetie", isCorrect: false },
+                    { text: "Cutie", isCorrect: false }
+                ]
+            }
+        ];
+
+        let currentIndex = 0;
+        const totalQuestions = quizData.length;
+
+        // Web Audio API Synthesizer Sound Effects
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        function playTone(freq, duration, type = 'sine', gainVal = 0.2) {
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = type;
+            osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+            gain.gain.setValueAtTime(gainVal, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + duration);
+        }
+
+        function playCorrectSound() {
+            playTone(523.25, 0.15, 'sine', 0.25); // C5
+            setTimeout(() => playTone(659.25, 0.25, 'sine', 0.25), 100); // E5
+        }
+
+        function playWrongSound() {
+            playTone(200, 0.25, 'sawtooth', 0.2);
+        }
+
+        // Shuffle helper algorithm
+        function shuffleArray(arr) {
+            const copy = [...arr];
+            for (let i = copy.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [copy[i], copy[j]] = [copy[j], copy[i]];
+            }
+            return copy;
+        }
+
+        // Render Question
+        function renderCurrentQuestion() {
+            const currentData = quizData[currentIndex];
+            
+            document.getElementById('q-counter').innerText = `Question ${currentIndex + 1} of ${totalQuestions}`;
+            document.getElementById('question-text').innerText = currentData.question;
+            
+            // Update progress bar percentage
+            const progressPercent = ((currentIndex + 1) / totalQuestions) * 100;
+            document.getElementById('progress-bar').style.width = `${progressPercent}%`;
+
+            const optionsContainer = document.getElementById('options-list');
+            optionsContainer.innerHTML = '';
+
+            // Shuffle option choices for variety
+            const shuffledOptions = shuffleArray(currentData.options);
+
+            shuffledOptions.forEach(opt => {
+                const btn = document.createElement('button');
+                btn.className = 'option-btn';
+                btn.innerHTML = `<span>${opt.text}</span>`;
+                btn.onclick = () => checkAnswer(btn, opt.isCorrect);
+                optionsContainer.appendChild(btn);
+            });
+        }
+
+        // Answer Verification
+        function checkAnswer(selectedBtn, isCorrect) {
+            const card = document.getElementById('quiz-card');
+
+            if (isCorrect) {
+                selectedBtn.classList.add('correct');
+                playCorrectSound();
+                
+                // Small confetti burst for right answer
+                confetti({
+                    particleCount: 35,
+                    spread: 60,
+                    origin: { y: 0.75 }
+                });
+
+                setTimeout(() => {
+                    currentIndex++;
+
+                    // Transition to Warning section after Q6
+                    if (currentIndex === 6) {
+                        showWarning1();
+                    } else if (currentIndex >= totalQuestions) {
+                        showFinalCard();
+                    } else {
+                        renderCurrentQuestion();
+                    }
+                }, 750);
+            } else {
+                selectedBtn.classList.add('wrong');
+                card.classList.add('shake');
+                playWrongSound();
+
+                setTimeout(() => {
+                    card.classList.remove('shake');
+                    selectedBtn.classList.remove('wrong');
+                }, 500);
+            }
+        }
+
+        // Warning flow triggers
+        function showWarning1() {
+            document.getElementById('quiz-card').classList.add('hidden');
+            document.getElementById('warning-card-1').classList.remove('hidden');
+            document.body.style.background = 'linear-gradient(135deg, #180511, #2d0b1e)';
+        }
+
+        function proceedToWarning2() {
+            document.getElementById('warning-card-1').classList.add('hidden');
+            document.getElementById('warning-card-2').classList.remove('hidden');
+        }
+
+        function startCriticalSection() {
+            document.getElementById('warning-card-2').classList.add('hidden');
+            document.getElementById('quiz-card').classList.remove('hidden');
+            document.body.style.background = 'linear-gradient(135deg, var(--bg-dark-1), var(--bg-dark-2))';
+            renderCurrentQuestion();
+        }
+
+        function showFinalCard() {
+            document.getElementById('quiz-card').classList.add('hidden');
+            document.getElementById('closing-card').classList.remove('hidden');
+            
+            // Grand Confetti Celebration
+            confetti({
+                particleCount: 110,
+                spread: 100,
+                origin: { y: 0.6 }
+            });
+        }
+
+        function restartQuiz() {
+            currentIndex = 0;
+            document.getElementById('closing-card').classList.add('hidden');
+            document.getElementById('quiz-card').classList.remove('hidden');
+            document.body.style.background = 'linear-gradient(135deg, var(--bg-dark-1), var(--bg-dark-2))';
+            renderCurrentQuestion();
+        }
+
+        // Animated Canvas Stars/Particles background
+        const canvas = document.getElementById('particle-canvas');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        class Particle {
+            constructor() {
+                this.reset();
+            }
+            reset() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.radius = Math.random() * 2 + 0.5;
+                this.speedY = -Math.random() * 0.4 - 0.1;
+                this.alpha = Math.random() * 0.6 + 0.2;
+            }
+            update() {
+                this.y += this.speedY;
+                if (this.y < 0) {
+                    this.reset();
+                    this.y = canvas.height;
+                }
+            }
+            draw() {
+                ctx.fillStyle = `rgba(255, 255, 255, ${this.alpha})`;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        for (let i = 0; i < 45; i++) {
+            particles.push(new Particle());
+        }
+
+        function animateParticles() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            particles.forEach(p => {
+                p.update();
+                p.draw();
+            });
+            requestAnimationFrame(animateParticles);
+        }
+        animateParticles();
+
+        // Initialize quiz
+        renderCurrentQuestion();
+    </script>
+</body>
+</html>
